@@ -4,3 +4,4 @@
 @media(max-width:850px){header{padding:20px 16px 12px}main{padding:0 16px 20px;grid-template-columns:1fr;gap:14px}#canvas{height:440px}.toolbar{gap:8px}.toolbar label{width:100%}.toolbar .search{min-width:0}.foot{display:block}#pagination{flex-wrap:wrap}aside{padding:18px}.legend{line-height:1.8}.map-controls{align-items:start}}
 button{min-height:44px}#back{margin-top:12px}#map .node .hit{fill:transparent;stroke:none}#map .node:focus-visible .hit{stroke:var(--accent);stroke-width:2}#map .node .count{fill:var(--muted)}#breadcrumbs span{align-self:center;font-size:13px}#results button{overflow-wrap:anywhere}.toolbar select{max-width:100%}#map .edge{opacity:.35}#map .requires{opacity:.45}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;animation:none!important;transition:none!important}}
+#map .node:focus-visible{outline:2px solid var(--accent);outline-offset:4px}#map .node:focus-visible .hit{stroke:none}
