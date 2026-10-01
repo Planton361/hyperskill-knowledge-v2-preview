@@ -40,10 +40,13 @@ const topicScene=['topic','topics','project'].includes(level),cap=topicScene?(mo
 state.page=Math.min(state.page,Math.max(0,Math.ceil(total/per)-1));
 const visible=level==='topic'?[all[0],...all.slice(1).slice(state.page*per,(state.page+1)*per)]:all.slice(state.page*per,(state.page+1)*per);
 scene=visible.map(n=>({...n,type:n.type||'topic'}));
-const cols=mobile?1:Math.min(3,Math.max(1,Math.ceil(Math.sqrt(scene.length)))),rows=Math.max(1,Math.ceil(scene.length/cols)),height=Math.max(mobile?330:430,rows*(mobile?82:100)+90);
+const cols=mobile?1:Math.min(3,Math.max(1,Math.floor(w/320)),Math.max(1,Math.ceil(Math.sqrt(scene.length)))),rows=Math.max(1,Math.ceil(scene.length/cols));
+scene.forEach((n,i)=>{n.x=mobile?(level==='topic'&&i?48:28):25+(i%cols)*(w/cols);});
+if(level==='project')scene.push({...P.get(state.project),type:'project',x:28,y:35});
+for(const n of scene){const chars=mobile?Math.floor((w-n.x-30)/8):Math.max(14,Math.floor((w/cols-55)/8)),lines=[''];for(const word of n.title.split(' ')){let i=lines.length-1;if(lines[i]&&lines[i].length+word.length+1>chars)lines.push(word);else lines[i]+=(lines[i]?' ':'')+word;}n.labelLines=lines;n.countY=Math.max(48,(lines.length-1)*19+22);}
+const rowHeight=Math.max(mobile?82:100,...scene.map(n=>n.countY+27)),height=Math.max(mobile?330:430,rows*rowHeight+90)+(level==='project'?70:0);
 $('canvas').style.height=height+'px';svg.attr('viewBox','0 0 '+w+' '+height);
-scene.forEach((n,i)=>{n.x=mobile?(level==='topic'&&i?48:28):25+(i%cols)*(w/cols);n.y=(level==='project'?125:65)+Math.floor(i/cols)*(mobile?82:100);});
-if(level==='project'){$('canvas').style.height=(height+70)+'px';svg.attr('viewBox','0 0 '+w+' '+(height+70));scene.push({...P.get(state.project),type:'project',x:28,y:35});}
+scene.forEach((n,i)=>{if(n.type!=='project')n.y=(level==='project'?125:65)+Math.floor(i/cols)*rowHeight;});
 const pos=new Map(scene.map(n=>[n.key,n]));
 if(level==='topic')edges=incident(state.topic).filter(e=>pos.has(e.source)&&pos.has(e.target)).map(e=>({...e,type:e.records.some(r=>r.type==='prerequisite')?'prerequisite':'dependent'}));
 if(level==='project')edges=m.edges.filter(e=>e.type==='project_requires'&&e.source===state.project&&pos.has(e.target));
@@ -52,9 +55,8 @@ const g=nodes.selectAll('g.node').data(scene,n=>n.key).join(enter=>{const n=ente
 const status=n=>n.is_learned===true?'Learned'+(n.is_verified?' · Verified':''):n.is_learned===false?'Not learned':'Unknown';
 g.attr('class',n=>'node '+(n.type==='topic'?(n.is_learned===true?'learned':n.is_learned===false?'not-learned':'unknown'):'structural')+(n.key===state.topic?' selected':'')).attr('data-key',n=>n.key).attr('data-type',n=>n.type).attr('data-learned',n=>n.type==='topic'?String(n.is_learned):null).attr('transform',n=>'translate('+n.x+','+n.y+')').attr('role','button').attr('tabindex',0).attr('aria-label',n=>n.title+' · '+(n.count?n.count.learned+' learned':n.type==='topic'?status(n):n.status)).on('click',(e,n)=>{e.stopPropagation();action(n);}).on('keydown',(e,n)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action(n);}});
 g.select('.hit').attr('r',22);g.select('.mark').attr('r',n=>n.type==='topic'?5:10);g.select('.verification').attr('r',9).attr('display',n=>n.is_learned===true&&n.is_verified?null:'none');
-g.select('.label').attr('x',18).attr('y',-5).attr('font-size',16).each(function(n){const label=d3.select(this).text(''),chars=mobile?Math.floor((w-n.x-30)/8):Math.max(14,Math.floor((w/cols-55)/8)),lines=[''];
-for(const word of n.title.split(' ')){let i=lines.length-1;if(lines[i]&&lines[i].length+word.length+1>chars)lines.push(word);else lines[i]+=(lines[i]?' ':'')+word;}lines.forEach((line,i)=>label.append('tspan').attr('x',18).attr('dy',i?19:0).text(line));});
-g.select('.count').attr('x',18).attr('y',48).attr('font-size',12).text(n=>n.count?n.count.learned+' learned · '+n.count.verified+' verified · '+n.count.total+' course topics':n.type==='topic'?status(n):n.status);
+g.select('.label').attr('x',18).attr('y',-5).attr('font-size',16).each(function(n){const label=d3.select(this).text('');n.labelLines.forEach((line,i)=>label.append('tspan').attr('x',18).attr('dy',i?19:0).text(line));});
+g.select('.count').attr('x',18).attr('y',n=>n.countY).attr('font-size',12).text(n=>n.count?n.count.learned+' learned · '+n.count.verified+' verified':n.type==='topic'?status(n):n.status);
 quiet=true;svg.call(zoom.transform,d3.zoomIdentity);quiet=false;
 svg.attr('data-level',level).attr('data-mode',state.mode).attr('data-ready','true');
 $('my').setAttribute('aria-pressed',state.mode==='knowledge');$('roadmap').setAttribute('aria-pressed',state.mode==='roadmap');$('course').value=state.course;
